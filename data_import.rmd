@@ -1,0 +1,144 @@
+---
+title: "data_import"
+author: "Xinyuan Liu"
+date: "2021/9/23"
+output: github_document
+---
+
+```{r, echo=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+## Import some data
+
+I want to import "FAS_litter.csv".
+
+
+```{r}
+litters_df <- read_csv("data/FAS_litters.csv")
+litters_df <- janitor::clean_names(litters_df)
+
+pups_df <- read_csv("data/FAS_pups.csv")
+pups_df <- janitor::clean_names(pups_df)
+```
+
+## select
+
+let's select some columns
+
+```{r}
+select(litters_df, group, litter_number, gd0_weight, pups_born_alive)
+select(litters_df, group, gd0_weight, gd18_weight)
+
+select(litters_df, group, gd0_weight:gd_of_birth)
+
+select(litters_df, -litter_number)
+##select all columns except litter_number
+select(litters_df, group, starts_with("pups")) ##select columns start with pups
+
+select(litters_df, GROUP = group, litter_number)
+rename(litters_df, GROUP = group)
+## rename group column
+
+select(litters_df, litter_number, everything())
+relocate(litters_df, litter_number)
+## relocate the column to the first one
+
+```
+
+## in class practice
+
+```{r}
+select(pups_df, litter_number, sex, pd_ears)
+```
+
+## filter
+
+Let's get rid of rows
+
+```{r}
+filter(litters_df, gd_of_birth == 20)
+filter(litters_df, group == "Con7")
+
+filter(litters_df, gd0_weight < 23)
+
+filter(litters_df, pups_survive !=4) ##pup_survive not equal to 4
+filter(litters_df, !(group == "Con7")) ## not con7
+filter(litters_df, group %in% c("Con7", "Con8")) ## both con7 & con8
+filter(litters_df, group == "Con7", gd_of_birth == 20)
+drop_na(litters_df)
+
+```
+
+## in class practice
+```{r}
+filter(pups_df, sex == 1)
+filter(pups_df, pd_walk < 11, sex == 2)
+```
+
+## mutate
+
+let's add or change column
+
+```{r}
+mutate(litters_df, weight_change = gd18_weight - gd0_weight) ## add a weight change columns 
+
+mutate(
+  litters_df,
+  weight_change = gd18_weight - gd0_weight,
+  group = str_to_lower(group) ## make group variables into lower case
+)
+```
+
+## arrange
+
+let's rearrange the data
+
+```{r}
+arrange(litters_df, gd_of_birth, gd0_weight) 
+## arrange selected columns in order
+```
+
+## pipes
+
+```{r}
+litters_data_raw = read_csv("data/FAS_litters.csv")
+litters_clean_name = janitor::clean_names(litters_data_raw)
+litters_select = select(litters_clean_name, group, pups_survive)
+litters_filter = filter(litters_select, group == "Con7")
+
+
+litters_df = 
+  read_csv("data/FAS_litters.csv") %>%
+  janitor::clean_names() %>%
+  select(group, pups_survive) %>% 
+  filter(group == "Con7")
+
+
+litters_df = 
+  read_csv("data/FAS_litters.csv") %>% 
+  janitor::clean_names() %>% 
+  select(-pups_survive) %>% 
+  mutate(
+    weight_change = gd18_weight - gd0_weight,
+    group = str_to_lower(group)
+  ) %>% 
+  drop_na(weight_change) %>% 
+  filter(group %in% c("con7","con8")) %>% 
+  select(litter_number, group, weight_change, everything())
+  
+```
+
+## in class practice
+
+```{r}
+pups_df =
+  read_csv("data/FAS_pups.csv") %>% 
+  janitor::clean_names() %>% 
+  filter(sex == 1) %>%
+  select(-pd_ears) %>% 
+  mutate(pd_pivot_gt_7 = pd_pivot >= 7)
+  
+```
+
+
