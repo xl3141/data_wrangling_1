@@ -1,0 +1,113 @@
+---
+title: "tidy_data"
+author: "Xinyuan Liu"
+date: "2021/9/30"
+output: github_document
+---
+
+```{r, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(haven)
+```
+
+## pivot longer
+```{r, message = FALSE}
+pulse_df =
+  haven::read_sas("data/public_pulse_data.sas7bdat") %>% 
+  janitor::clean_names()
+
+```
+
+let's try to pivot
+
+```{r}
+pulse_tidy = 
+  pulse_df %>% 
+  pivot_longer(
+    bdi_score_bl:bdi_score_12m,
+    names_to = "visit", 
+    names_prefix = "bdi_score_",
+    values_to = "bdi"
+  ) %>% 
+  mutate(
+    visit = replace(visit, visit == "bl", "00m"),
+    visit = factor(visit)
+  )
+```
+
+## pivot_wider
+
+make up a result data table
+
+```{r}
+analysis_df = 
+  tibble(
+    group = c("treatment", "treatment", "control", "control"),
+    time = c("a", "b", "a", "b"),
+    group_mean = c(4, 8, 3, 6)
+  )
+analysis_df %>% 
+  pivot_wider(
+    names_from = "time",
+    values_from = "group_mean"
+  ) %>% 
+  knitr::kable()
+  
+```
+
+## BIND ROWS
+
+import the lord of the ring movie stuff
+
+```{r}
+fellowship_df = 
+  read_excel("data/LotR_Words.xlsx", range ="B3:D6") %>% 
+  janitor::clean_names() %>% 
+  mutate(movie = "fellowship_rings")
+two_towers_df = 
+  read_excel("data/LotR_Words.xlsx", range ="F3:H6") %>% 
+  janitor::clean_names() %>% 
+  mutate(movie = "two_towers")
+return_king_df = 
+  read_excel("data/LotR_Words.xlsx", range ="J3:L6") %>% 
+  janitor::clean_names() %>% 
+  mutate(movie = "return_king")
+
+lotr_df = 
+  bind_rows(fellowship_df, two_towers_df, return_king_df) %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    female:male,
+    names_to = "sex",
+    values_to ="words"
+  ) %>% 
+  relocate(movie)
+
+```
+
+## joins
+
+look at fas data
+
+```{r}
+litters_df = 
+  read_csv("data/FAS_litters.csv") %>% 
+  janitor::clean_names() %>% 
+  separate(group, into = c("dose", "day_of_tx"), 3) %>% 
+  relocate(litter_number) %>% 
+  mutate(dose = str_to_lower(dose))
+
+pups_df =
+  read_csv("data/FAS_pups.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(sex = recode(sex, `1` = "male", `2` = "female"))
+```
+
+let's join these up
+
+```{r}
+fas_df = 
+  left_join(pups_df, litters_df, by = "litter_number")
+```
+
